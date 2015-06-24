@@ -1,0 +1,24 @@
+GDS2FastHenry python fasthenry script
+
+Creates a FastHenry .inp file from a GDS file. Software is somewhat buggy and incomplete, so use at your own risk.
+
+Requires python-gdsii-0.2.1 pacakge to be installed in your local python.
+
+See run.py for example of how to use this script.
+
+Functionally, this script is based on two classes:
+1. ImportGDSII -- imports a GDS file and converts it into an internal representation, which is then piped to
+2. FastHenryFile -- which converts that internal representation into a fastHenry .inp file
+
+Use the function ImportGDSII.GDS2FH(filename, thick=0.1, comments='', skiplayers=[]) to do the actual conversion.
+
+thick specifies the thickness of all metal layers (0.1 micron default)
+comment will be printed as a comment at the top of the FastHenry file
+skiplayers specifies what GDS layer numbers to ignore when processing the file
+
+The GDS file should be in a specific format to ensure succesful conversion:
+1. There should be a single top level cell with all of the geometry. 
+2. Rectangles on GDS layer 0 will be assumed to be FastHenry ground planes
+3. Wires on each GDS layer are converted to traces in FastHenry and joined together in the order wire vertices are drawn in the GDS file
+   (i.e. draw each inductor on a separate GDS layer)
+4. FastHenry input/output ports are placed at the start and end of each wire
