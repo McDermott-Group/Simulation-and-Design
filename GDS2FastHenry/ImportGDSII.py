@@ -113,7 +113,7 @@ class GDSII:
                         nodeList.append(fhf.point(vertex[0]/SCALE, vertex[1]/SCALE, elem.layer*self.thick))
                         nodeCounter = nodeCounter+1
                         
-                    for idx in xrange(len(elem.xy)-1):
+                    for idx in range(len(elem.xy)-1):
                         
                         segList.append(fhf.segment(startNode+idx,startNode+idx+1,elem.width/SCALE,self.thick))
                     
