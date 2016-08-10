@@ -1,5 +1,5 @@
 """
-Chris Wilen
+Chris Wilen (based on a file by Caleb Howington)
 McDermott Group, UW Madison
 
 This file provides objects for a variety of different types of cpw resonators.
