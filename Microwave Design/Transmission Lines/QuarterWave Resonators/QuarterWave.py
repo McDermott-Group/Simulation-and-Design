@@ -1,3 +1,8 @@
+import numpy as np
+from scipy import special
+from collections import namedtuple
+from scipy.constants import speed_of_light,mu_0,epsilon_0,pi
+
 ############################################################################
 ### Function that returns the quarter-wavelength given set of parameters ###
 ############################################################################
