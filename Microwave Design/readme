@@ -3,3 +3,5 @@ Tools for synthesis and design of microwave components such as capacitors, match
 Most written over the course of several years' time by GR, from various sources such as Gupta, Simmons, Pozar, Waddell, etc...
 
 WARNING: While I made every effort to ensure corectness of the formulas, you should probably double check that they make sense.
+
+The python files in this folder (but not the ones downstream in the directory) are intended to be somewhat comprehensive libraries.  For example, we can import from capacitance.py an interdigitated capacitor class, or from cpwtools.py a half-wavelength resonator object can be created.
