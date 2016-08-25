@@ -23,12 +23,36 @@ class OverlapCapacitor(object):
 
     def cap(self):
         return self.eps_r*epsilon_0*self.area/self.t
+        
+        
+class CPWGap(object):
+    """ Source: http://qucs.sourceforge.net/tech/node89.html """
 
+    def __init__(self, w, s, g, eps_r=11.8):
+        """
+        w = width of center trace in um
+        s = distance between the center trace and ground plane in um
+        g = gap between center traces to make cap
+        eps_r = relative permittivity of dielectric
+        """
+        self.w = w*1e-6
+        self.s  = s *1e-6
+        self.g  = g *1e-6
+        self.eps_r = eps_r
+        
+    def _p(self):
+        return self.g/4/self.w
+    
+    def L(self):
+        return mu_0*self.w/2/pi*( self._p()-np.sqrt(1+self._p()**2) + np.log((1+np.sqrt(1+self._p()**2))/self._p() ))
+    
+    def cap(self):
+        return self.L()*4/mu_0*epsilon_0*(self.eps_r+1)/2
 
 class MicrostripGap(object):
     """ Source: http://qucs.sourceforge.net/tech/node79.html """
 
-    def __init__(self, w1, w2, s, eps_r=3.9, h=.1):
+    def __init__(self, w1, w2, s, eps_r=11.8, h=.1):
         """
         w1 = width of first microstrip in um
         w2 = width of second microstrip in um
@@ -43,10 +67,10 @@ class MicrostripGap(object):
         self.eps_r = eps_r
 
     def Q1(self):
-        return 0.04598*(0.03 + (self.w1/self.h)**self.Q5())*(0.272+0.07*self.eps_r*epsilon_0)
+        return 0.04598*(0.03 + (self.w1/self.h)**self.Q5())*(0.272+0.07*self.eps_r)
 
     def Q2(self):
-        return 0.107*(self.w1/self.h + 9)*(self.s/self.h)**1.05 * (1.5+0.3*self.w1/self.h)/(1+0.6*self.w1/self.h)
+        return 0.107*(self.w1/self.h + 9.)*(self.s/self.h)**1.05 * (1.5+0.3*self.w1/self.h)/(1+0.6*self.w1/self.h)
 
     def Q3(self):
         return np.exp(-0.5978*(self.w2/self.w1)**1.35)-0.55
@@ -55,7 +79,7 @@ class MicrostripGap(object):
         return np.exp(-0.5978*(self.w1/self.w2)**1.35)-0.55
 
     def Q5(self):
-        return 1.23/( 1+0.12*(self.w2/self.w1-1)**0.9 )
+        return 1.23/( 1+0.12*(self.w2/self.w1-1.)**0.9 )
 
     def cap(self):
         """Capacitance between the ends of the microstrips in Farads"""
