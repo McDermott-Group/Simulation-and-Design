@@ -26,9 +26,9 @@ class CPW(object):
     e1 = relative permitivity of substrate
     material = ['nb','al'], assigns Tc and rho
     tand =
-    physics from goppl unless otherwise noted.
+    physics from gupta, goppl unless otherwise noted.
     """
-    def __init__(self, w=10., s=6., t=.1, h=380., e1=11.8, material="nb", tand=.15e-6):
+    def __init__(self, w=10., s=6., t=.1, h=480., e1=11.8, material="nb", tand=.15e-6):
         self.w = w*1e-6
         self.s = s*1e-6
         self.t = t*1e-6
@@ -37,48 +37,56 @@ class CPW(object):
         self.e1 = e1  # dielectric
         self.tand = tand
         self.material = material
-        self.Delta = (1.25*self.t/pi)*( 1 + np.log(4*pi*self.w/self.t) ) # correction for thickness of metal
-        self.s_eff = self.s - self.Delta  # &&& make these into functions so if they are changed, everything works out nicely
-        self.w_eff = self.w + self.Delta
         self.kineticInductanceCorrectionOn = True
-
-        if material.lower() == "al":
-            self.Tc = 1.23
-            self.rho = 4e-9
-        elif material.lower() == 'nb':
-            self.Tc = 8
-            self.rho = 4e-9
-
-        self.l0 = 1.05e-3*np.sqrt(self.rho/self.Tc)
+        self.metalThicknessCorrectionOn = True
 
 #     Turn on/off corrections due to metal thickness, kinetic inductance
     def setMetalThicknessCorrection(self, on):
-        if on:
-            self.s_eff = self.s - self.Delta
-            self.w_eff = self.w + self.Delta
-        else:
-            self.s_eff = self.s
-            self.w_eff = self.w
+        self.metalThicknessCorrectionOn = on
 
     def setKineticInductanceCorrection(self, on):
         self.kineticInductanceCorrectionOn = on
 
 #     Effective Dielectric Constant from Silicon-Air Interface
+    def _Delta(self):
+        """correction for thickness of metal"""
+        return (1.25*self.t/pi)*( 1 + np.log(4*pi*self.w/self.t) )
+
+    def _s_eff(self):
+        if self.metalThicknessCorrectionOn:
+            return self.s - self._Delta()
+        else:
+            return self.s
+            
+    def _w_eff(self):
+        if self.metalThicknessCorrectionOn:
+            return self.w + self._Delta()
+        else:
+            return self.w
 
     def _k0(self):
-        return self.w_eff/(self.w_eff+2*self.s_eff)
+        return self._w_eff()/(self._w_eff()+2*self._s_eff())
 
     def _kp0(self):
         return np.sqrt(1-self._k0()**2)
 
     def _k1(self):
-        return np.sinh(pi*self.w_eff/(4*self.h))/np.sinh(pi*(2*self.s_eff+self.w_eff)/(4*self.h))
+        return np.sinh(pi*self._w_eff()/(4*self.h))/np.sinh(pi*(2*self._s_eff()+self._w_eff())/(4*self.h))
 
     def _kp1(self):
         return np.sqrt(1-self._k1()**2)
+    
+    def _C1(self):
+        """Capacitance of the top plane of a cpw.  (Gupta)"""
+        return 2*epsilon_0*ellipk(self._k0()**2)/ellipk(self._kp0()**2)
+    
+    def _C2(self):
+        """Capacitance of the bottom plane of a cpw.  (Gupta)"""
+        return 2*epsilon_0*(self.e1-1)*ellipk(self._k1()**2)/ellipk(self._kp1()**2)
 
     def Eeff(self):
-        return 1 + ((self.e1-1)*ellipk(self._k1()**2)*ellipk(self._kp0()**2))/(2*ellipk(self._kp1()**2)*ellipk(self._k0()**2))
+        """Effective (relative) dielectric constant"""
+        return (2*self._C1()+self._C2())/2/self._C1()
 
 #     Kinetic Inductance Calculation
 #     from Clem, "Inductances and attenuation constant for a thin-film SC CPW res"
@@ -91,7 +99,14 @@ class CPW(object):
 
     def Llk(self):
         """Kinetic inductance per unit length."""
-        return mu_0*self.l0/self.w*self._q(self.t/self.l0)*self._g( (self.w/2)/(self.w/2+self.s), 1 )
+        if material.lower() == "al":
+            self.Tc = 1.23
+            self.rho = 4e-9
+        elif material.lower() == 'nb':
+            self.Tc = 8
+            self.rho = 4e-9
+        l0 = 1.05e-3*np.sqrt(self.rho/self.Tc)
+        return mu_0*l0/self.w*self._q(self.t/l0)*self._g( (self.w/2)/(self.w/2+self.s), 1 )
 
 #     Circuit Parameters
 
@@ -146,21 +161,32 @@ class CPWWithBridges(CPW):
         self.t_oxide = t_oxide
         self.e_oxide = e_oxide
         super(CPWWithBridges,self).__init__(**kwargs)
-
-    def Cl_dielectric(self):
-        """Capacitance per unit length through the substrate."""
-        return self.Cl*self.e1/(1+self.e1)
-
-    def Cl_air(self):
-        """Capacitance per unit length through the air above the substrate."""
-        return self.Cl*1/(1+self.e1)
+    
+    def Cl_bridge_air(self):
+        """Capacitance per unit length of bridge through the air."""
+        bridgeCap = cap.OverlapCapacitor(self.bridgeWidth*1e6*self.w, t = self.t_oxide, eps_r = self.e0)
+        return 1e6*bridgeCap.cap()/self.bridgeSpacing
+    
+    def Cl_bridge_dielectric(self):
+        """Capacitance per unit length of bridge through the air."""
+        bridgeCap = cap.OverlapCapacitor(self.bridgeWidth*1e6*self.w, t = self.t_oxide, eps_r = self.e_oxide)
+        return 1e6*bridgeCap.cap()/self.bridgeSpacing
+    
+    def EeffForPlainCPW(self):
+        return super(CPWWithBridges,self).Eeff()
+    
+    def Eeff(self):
+        """Effective (relative) permetivity with bridges included."""
+        return (2*self._C1()+self._C2()+self.Cl_bridge_dielectric())/(2*self._C1()+self.Cl_bridge_air())
 
     def Cl(self):
         """Note that this does not take into account the magnitude of the E-field,
         which changes along a standing wave."""
-        cpwCap = super(CPWWithBridges,self).Cl()
-        bridgeCap = cap.OverlapCapacitor(self.bridgeWidth*self.w, t = self.t_oxide, eps = self.e_oxide)
-        return cpwCap + bridgeCap.cap()/self.l
+        # multiplied factor below removes changes in Eeff for capacitance, since
+        # it is really the additional capacitance that changes the Eeff, not the
+        # other way around.
+        cpwCap = super(CPWWithBridges,self).Cl() * self.EeffForPlainCPW()/self.Eeff()
+        return cpwCap + self.Cl_bridge_dielectric()
 
 
 class HalfLResonator:
