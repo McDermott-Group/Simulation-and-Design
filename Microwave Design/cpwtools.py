@@ -1,5 +1,5 @@
 """
-Chris Wilen (based on a file by Caleb Howington)
+Chris Wilen
 McDermott Group, UW Madison
 
 This file provides objects for a variety of different types of cpw resonators.
@@ -127,7 +127,7 @@ class CPW(object):
         return 4*epsilon_0*self.Eeff()*ellipk(self._k0()**2)/ellipk(self._kp0()**2)
 
     def Gl(self, w):
-        return w * self.tand * self.Cl() * self.e1/(self.e1 + self.e0)
+        return w * self.tand * self._C2()
 
     def vph(self):
         """Phase velocity."""
@@ -140,11 +140,14 @@ class CPW(object):
 #     Loss
 #     from Pozar p.50
 
+    def gamma(self, w):
+        return np.sqrt( 1j*w*self.Ll()*( self.Gl(w) + 1j*w*self.Cl() ) )
+
     def alpha(self, w):
-        return np.sqrt( 1j*w*self.Ll()*( self.Gl(w) + 1j*w*self.Cl() ) ).real
+        return self.gamma(w).real
 
     def beta(self, w):
-        return np.sqrt( 1j*w*self.Ll()*( self.Gl() + 1j*w*self.Cl() ) ).imag
+        return self.gamma(w).imag
 
 #      String
 
@@ -153,7 +156,6 @@ class CPW(object):
 
 
 class CPWWithBridges(CPW):
-    """Currently this does not support kinetic inductance."""
     def __init__(self, bridgeSpacing = 100, bridgeWidth = 2, oxideLossTan = 3e-3, t_oxide = 0.1, e_oxide = 3.9, **kwargs):
         self.bridgeSpacing = bridgeSpacing
         self.bridgeWidth = bridgeWidth
@@ -187,6 +189,15 @@ class CPWWithBridges(CPW):
         # other way around.
         cpwCap = super(CPWWithBridges,self).Cl() * self.EeffForPlainCPW()/self.Eeff()
         return cpwCap + self.Cl_bridge_dielectric()
+    
+    def Llg(self):
+        return self.Eeff()/c**2/self.Cl()
+    
+    def Gl_bridge(self, w):
+        return w * self.oxideLossTangent * self.Cl_bridge_dielectric()
+    
+    def Gl(self, w):
+        return super(CPWWithBridges,self).Gl(w) + self.Gl_bridge(w)
 
 
 class HalfLResonator:
