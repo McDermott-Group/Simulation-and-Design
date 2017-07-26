@@ -26,7 +26,7 @@ module Octagon
 	void Octagon(void)
 	{	
 		
-		LCell	pCell	=	LCell_GetVisible();
+      LCell	pCell	=	LCell_GetVisible();
 		LFile	pFile	=	LCell_GetFile(pCell);		
 		LLayer pLayer; 
 		
@@ -38,24 +38,27 @@ module Octagon
 		double xx, yy;
 		double area;
 		
-         LDialogItem Dialog_Items[4] = {{"Layer", "VIA"}, {"X Center (micron)", "0"}, {"Y Center (micron)", "0"}, {"Area (micron^2)", "2"} };		
-	 LCoord Xc, Yc, Rad ;    //Xc = Dodecahedron XCenter, Yc = Dodecahedron YCenter , Area = area of Dodecahedron
+        LDialogItem Dialog_Items[4] = {{"Layer", "FUCK"}, {"X Center (micron)", "0"}, {"Y Center (micron)", "0"}, {"Area (micron^2)", "2"} };		
+        LCoord Xc, Yc, Rad ;    //Xc = Dodecahedron XCenter, Yc = Dodecahedron YCenter , Area = area of Dodecahedron
         
 		
-      if ( LDialog_MultiLineInputBox ( "Octagon  Parameters", Dialog_Items, 4 ) )
-      {
-          pLayer = LLayer_Find(pFile, Dialog_Items[0].value);
-          Xc = atol(Dialog_Items[1].value);
-          Yc = atol(Dialog_Items[2].value);
-          area = atol(Dialog_Items[3].value);
+        if ( LDialog_MultiLineInputBox ( "Octagon  Parameters", Dialog_Items, 4 ) )
+        {
+            pLayer = LLayer_Find(pFile, Dialog_Items[0].value);
+            Xc = atol(Dialog_Items[1].value)*1000;
+            Yc = atol(Dialog_Items[2].value)*1000;
+            area = atol(Dialog_Items[3].value);
           
           
-      }
+        }
 
-		//Rad = sqrt(area/(sqrt(2.)*2.));
+		Rad = sqrt(area/(sqrt(2.)*2.))*1000;
 
-		Rad = 0.84;
-		
+		//Rad = 0.84*1000;
+		//LPoint center;
+		//center = LPoint_Set(5000,5000);
+      //LCoord radius;
+      //radius = 5000;
 		for (idx=0; idx < 8; idx++)
 		{
 			theta = idx*(2*PI/8.) - 2.*PI/16.;
@@ -63,16 +66,16 @@ module Octagon
 			xx = Xc + Rad*cos(theta);
 			yy = Yc + Rad*sin(theta);
 			
-			X = LFile_DispUtoIntU(pFile, xx);
-			Y = LFile_DispUtoIntU(pFile, yy);
+			//X = LFile_DispUtoIntU(pFile, xx);
+			//Y = LFile_DispUtoIntU(pFile, yy);
 			
-			ptArray[idx].x = X;
-			ptArray[idx].y = Y; 
+			ptArray[idx].x = xx;
+			ptArray[idx].y = yy; 
 		
 		}
 		
-		LPolygon_New(pCell, pLayer,ptArray,8);
-      
+		LPolygon_New(pCell, pLayer, ptArray,8);
+      //LCircle_New(pCell, pLayer, center, radius);
 	}	
 	void Octagon_register(void)
 	{
