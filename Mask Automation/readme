@@ -1,0 +1,12 @@
+This runs on python version 2.7.0
+The following libraries need to be installed before running this program:
+->gdsCAD
+->matplotlib
+->numpy
+->descartes
+->shapely
+->datetime
+
+For all the programs except for main.py, please run the command "python NAME.py -h" to display the list of parameters that can be modified 
+along with their default values.
+The parameterizations made are shown in the xmon.pdf file in the folder.
