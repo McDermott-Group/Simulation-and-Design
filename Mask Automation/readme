@@ -9,4 +9,4 @@ The following libraries need to be installed before running this program:
 
 For all the programs except for main.py, please run the command "python NAME.py -h" to display the list of parameters that can be modified 
 along with their default values.
-The parameterizations made are shown in the xmon.pdf file in the folder.
+The parameterizations made are shown in the parametrizations.pdf file in the folder.
