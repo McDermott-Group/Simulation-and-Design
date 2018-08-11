@@ -1,7 +1,7 @@
 This runs on python version 2.7.0
 
 *NOTE: update core.py of gdsCAD with the file uploaded in the repository 
-By default, the file can be found in the following path : "/home/aditya/.local/lib/python2.7/site-packages/gdsCAD/core.py"
+By default, the file can be found in the following path : "/home/(username)/.local/lib/python2.7/site-packages/gdsCAD/core.py"
 
 The following libraries need to be installed before running this program:
 ->gdsCAD*
