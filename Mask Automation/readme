@@ -1,6 +1,10 @@
 This runs on python version 2.7.0
+
+*NOTE: update core.py of gdsCAD with the file uploaded in the repository 
+The file by default can be found in the following path : "/home/aditya/.local/lib/python2.7/site-packages/gdsCAD/core.py"
+
 The following libraries need to be installed before running this program:
-->gdsCAD
+->gdsCAD*
 ->matplotlib
 ->numpy
 ->descartes
@@ -10,3 +14,9 @@ The following libraries need to be installed before running this program:
 For all the programs except for main.py, please run the command "python NAME.py -h" to display the list of parameters that can be modified 
 along with their default values.
 The parameterizations made are shown in the parametrizations.pdf file in the folder.
+
+The main file is given in the repository : it makes the gds file for the whole xmon. 
+Make sure all the files in the repository are in your folder before you run it!
+
+When asked for the parametrizations, the main program is basically calling all the other programs, so type in the arguments
+as if you were actually running the each one of these programs.
