@@ -36,3 +36,4 @@ Enter parameters for the Quantum Bus : (Enter blank for default values)
 Enter parameters for the Resonator : (Enter blank for default values)
 
 NOTE: Once the values of s and w are given, you don't need to provide them again.
+Also, an example gds file is included in the folder.
