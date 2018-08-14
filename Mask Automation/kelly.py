@@ -51,7 +51,6 @@ if main:
     name = 'XMON_'+now.strftime('%H_%M_%S')+'.gds'
     layout = core.GdsImport('temp.gds')
     cell.add(layout['TOP3'], origin=(0,0))
-    del layout['TOP3']
     
 else:
     name = 'KELLY_SQUID'+now.strftime('%H_%M_%S')+'.gds'
