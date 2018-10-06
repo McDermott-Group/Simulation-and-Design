@@ -92,17 +92,17 @@ class CPW(object):
 #     from Clem, "Inductances and attenuation constant for a thin-film SC CPW res"
 
     def _g(self, k, eps):
-        return 1/( 2*(1-k)*ellipk(k**2)**2 ) * np.log( 2*(1-k)/eps/(1+k) )
+        return 1./( 2*(1-k)*ellipk(k**2)**2 ) * np.log( 2*(1-k)/eps/(1+k) )
 
     def _q(self, u):
         return (np.sinh(u) + u)/8/np.sinh(u/2)**2
 
     def Llk(self):
         """Kinetic inductance per unit length."""
-        if material.lower() == "al":
+        if self.material.lower() == "al":
             self.Tc = 1.23
             self.rho = 4e-9
-        elif material.lower() == 'nb':
+        elif self.material.lower() == 'nb':
             self.Tc = 8
             self.rho = 4e-9
         l0 = 1.05e-3*np.sqrt(self.rho/self.Tc)
@@ -131,7 +131,7 @@ class CPW(object):
 
     def vph(self):
         """Phase velocity."""
-        return 1/np.sqrt(self.Ll()*self.Cl())
+        return 1./np.sqrt(self.Ll()*self.Cl())
 
     def z0(self):
         """Characteristic Impedance."""
@@ -194,36 +194,42 @@ class CPWWithBridges(CPW):
         return self.Eeff()/c**2/self.Cl()
     
     def Gl_bridge(self, w):
-        return w * self.oxideLossTangent * self.Cl_bridge_dielectric()
+        return w * self.oxideLossTan * self.Cl_bridge_dielectric()
     
     def Gl(self, w):
         return super(CPWWithBridges,self).Gl(w) + self.Gl_bridge(w)
 
 
-class HalfLResonator:
-    def __init__(self, cpw, l, cin, cout):
+class Resonator(object):
+    """Base for any resonator to inherit from.  Defaults to lambda/2"""
+    def __init__(self, cpw, l):
         self.l = l*1e-6
         self.cpw = cpw
-        self.cki = cin
-        self.cko = cout
+        self.wavelengthFraction = 2 # lambda/2 or lambda/4
+        self.couplings_C = {}
+        self.couplings_L = {}
 
     def f0(self):
-        # return c/(np.sqrt(self.cpw.Eeff())*2*self.l) # Goppl, doesn't include kinetic inductance?
-        return self.cpw.vph()/2/self.l
+        # return c/(np.sqrt(self.cpw.Eeff())*2*self.l) # Goppl for L/2, doesn't include kinetic inductance?
+        return self.cpw.vph()/(self.l*self.wavelengthFraction)
 
     def w0(self):
         return 2*pi*self.f0() # Goppl
 
     #     Circuit Parameters with Loss
+    
+    def setLengthFromFreq(self, f):
+        self.l = self.cpw.vph()/f/self.wavelengthFraction
+        return self.l
 
     def L(self):
         # return 2*self.cpw.Ll()*self.l/(pi**2) # Goppl
-        return 1/self.C()/self.w0()**2 # Pozar p.283
+        return 1./self.C()/self.w0()**2 # Pozar p.283
 
     def C(self):
         # these are equiv. (I checked)
         # return self.cpw.Cl()*self.l/2 # Goppl
-        return np.pi/2/self.w0()/self.cpw.z0() # Pozar p.283
+        return np.pi/self.wavelengthFraction/self.w0()/self.cpw.z0() # Pozar p.283
 
     def R(self):
         return self.cpw.z0()/(self.cpw.alpha(self.w0())*self.l) # Pozar p.283, Goppl
@@ -235,65 +241,81 @@ class HalfLResonator:
         # return cpw.beta(self.w0())/2/cpw.alpha(self.w0())
 
     def wn(self):
-        return 1/np.sqrt(self.L()*self.C()) # Goppl
+        return 1./np.sqrt(self.L()*self.C()) # Goppl
         # return self.Qint()/(self.R()*self.C())
+    
+    def fn(self):
+        return self.wn()/2/pi
 
     #   Loading
-
-    def Rin(self):
+    
+    def extraRFromCouplingC(self, name, Z0=50.):
         '''Effective input resistance to ground'''
-        return (1. + (self.wn()*self.cki*50.)**2)/(self.wn()*self.cki)**2/50. # Goppl
-        # return 50*(1+self.Qs(50, self.cki)**2) # Ted's notes
-
-    def Rout(self):
-        '''Effective output resistance to ground'''
-        return (1. + (self.wn()*self.cko*50.)**2)/(self.wn()*self.cko)**2/50. # Goppl
-        # return 50*(1+self.Qs(50, self.cko)**2) # Ted's notes
-
-    def Cin(self):
+        c = self.couplings_C[name]
+        return (1. + (self.wn()*c*Z0)**2)/(self.wn()*c)**2/Z0 # Goppl
+        # return Z0*(1+self.Qs(Z0, self.cki)**2) # Ted's notes
+    
+    def extraCFromCouplingC(self, name, Z0=50.):
         '''Effective input capacitance to ground'''
-        return self.cki/(1. + (self.wn()*self.cki*50.)**2)
-
-    def Cout(self):
-        '''Effective output capacitance to ground'''
-        return self.cko/(1. + (self.wn()*self.cko*50.)**2)
+        c = self.couplings_C[name]
+        return c/(1. + (self.wn()*c*Z0)**2)
+    
+    def addCapacitiveCoupling(self, name, c):
+        self.couplings_C[name] = c
 
     def wl(self):
         '''Loaded frequency in rad/s'''
-        return 1./np.sqrt(self.L()*(self.C() + self.Cin() + self.Cout()))
+        extraCs = [self.extraCFromCouplingC(name) for name in self.couplings_C.keys()]
+        return 1./np.sqrt(self.L()*(self.C() + sum(extraCs)))
 
     def fl(self):
         '''Loaded frequency'''
         return self.wl()/2/pi
-
-    def Qc(self):
-        '''Total coupling Q'''
-        return 1/(1/self.Qin() + 1/self.Qout())
-
-    def Qin(self):
-        '''Output Q'''
-        # return self.wn() * (self.C() + self.Cout())/(1./self.R() + 1./self.Rout())
-        return self.Rin() * np.sqrt( (self.C() + self.Cout()) / self.L() )
-
-    def Qout(self):
-        '''Output Q'''
-        # return self.wn() * (self.C() + self.Cout())/(1./self.R() + 1./self.Rout())
-        return self.Rout() * np.sqrt( (self.C() + self.Cout()) / self.L() )
+    
+    def Qc(self, name=None):
+        if name is None:
+            '''Total coupling Q'''
+            names = self.couplings_C.keys() + list(set(self.couplings_L) - set(self.couplings_C))
+            q = [1./self.Qc(name) for name in names]
+            return 1./(1./self.Qint() + sum(q))
+        else:
+            '''Coupling Q for a specific coupling'''
+            extraR = self.extraRFromCouplingC(name)
+            # extraR = extraRFromCouplingL(name)
+            if name in self.couplings_C:
+                extraC = self.extraCFromCouplingC(name)
+            else:
+                extraC = 0
+            # if name in self.couplings_L:
+            #     extraL = extraLFromCouplingL(name)
+            # else:
+            #     extraL = 0
+            extraL = np.inf
+            # return self.wn() * (self.C() + self.Cout())/(1./self.R() + 1./self.Rout())
+            return 1./(1./self.R() + 1./extraR) * np.sqrt( (self.C() + extraC) * (1./self.L() + 1./extraL) )
 
     def Ql(self):
-        '''Loaded Q, including internal loss'''
-        return self.wn() * (self.C() + self.Cin() + self.Cout())/(1./self.R() + 1./self.Rin() + 1./self.Rout())
-        # return 1/(1/self.Qint() + 1/self.Qin() + 1/self.Qout())
+        '''Loaded Q, including internal loss.'''
+        names = self.couplings_C.keys() + list(set(self.couplings_L) - set(self.couplings_C))
+        r = []
+        c = []
+        l = []
+        for name in names:
+            if name in self.couplings_C:
+                c.append( self.extraCFromCouplingC( name ) )
+                r.append( self.extraRFromCouplingC( name ) )
+            if name in self.couplings_L:
+                l.append( self.extraLFromCouplingL( name ) )
+                r.append( self.extraRFromCouplingL( name ) )
+        return 1./(1./self.R() + sum([1./x for x in r])) * np.sqrt(self.C() + sum(c)) * np.sqrt(1./self.L() + sum([1./x for x in l]))
+        # return 1./(1./self.Qint() + 1./self.Qin() + 1./self.Qout()) # does the just account for C() twice?  Goppl says only works at w=w*
 
     def kappa(self):
         '''Photon loss rate'''
         return self.wl()/self.Ql()
-
-    def kin(self):
-        return self.wl()/self.Qin()
-
-    def kout(self):
-        return self.wl()/self.Qout()
+    
+    def kappa(self, name):
+        return self.wl()/self.Qc(name)
 
     def photons(self, Pin):
         '''Number of photons in the steady state cavity, based on input power [dBm]'''
@@ -303,3 +325,19 @@ class HalfLResonator:
     def __str__(self):
         #return "l = {} um\nf = {} GHz\nQ = {}\nk = {} MHz".format(self.cpw.l*1e6,self.fl(), self.Ql(), self.kappa()/2e6/pi)
         return "l = {} um\nf = {} GHz\nQ = {}\nk = {} MHz\nC = {} pF\nL = {} nH\nR = {} Ohms".format(self.l*1e6, self.fl()/1e9, self.Ql(), self.kappa()/2e6/pi, self.C()*1e12, self.L()*1e9, self.R() )
+
+
+class HalfLResonator(Resonator):
+    """Open-circuited Lambda/2 resonator"""
+    def __init__(self, *args, **kwargs):
+        super(HalfLResonator,self).__init__(*args)
+        self.wavelengthFraction = 2
+        for name in kwargs.keys():
+            self.addCapacitiveCoupling(name,kwarg[name])
+
+
+class QuarterLResonator(Resonator):
+    """Open-circuited Lambda/2 resonator"""
+    def __init__(self, *args, **kwargs):
+        super(QuarterLResonator,self).__init__(*args)
+        self.wavelengthFraction = 4
