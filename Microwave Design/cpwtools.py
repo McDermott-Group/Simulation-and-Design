@@ -7,6 +7,7 @@ This file provides objects for a variety of different types of cpw resonators.
 
 from scipy.constants import c, epsilon_0, mu_0, h, hbar, e, pi
 from scipy.special import ellipk, ellipkm1
+from scipy.optimize import fsolve
 import numpy as np
 import capacitance as cap
 
@@ -218,9 +219,15 @@ class Resonator(object):
 
     #     Circuit Parameters with Loss
     
+    def setLAndReturnF(self, l):
+        self.l = l[0] # the [0] comes from the way l is passed in from the fsolve fn
+        return self.fl()
+    
     def setLengthFromFreq(self, f):
-        self.l = self.cpw.vph()/f/self.wavelengthFraction
-        return self.l
+        # self.l = self.cpw.vph()/f/self.wavelengthFraction
+        # return self.l
+        freq = lambda l: self.setLAndReturnF(l) - f
+        return fsolve(freq, 5000e-6)[0]
 
     def L(self):
         # return 2*self.cpw.Ll()*self.l/(pi**2) # Goppl
@@ -249,19 +256,21 @@ class Resonator(object):
 
     #   Loading
     
-    def extraRFromCouplingC(self, name, Z0=50.):
+    def extraRFromCouplingC(self, name):
         '''Effective input resistance to ground'''
-        c = self.couplings_C[name]
+        c = self.couplings_C[name]['C']
+        Z0 = np.float64(self.couplings_C[name]['Z0']) #float64 allows division by 0 to get inf
         return (1. + (self.wn()*c*Z0)**2)/(self.wn()*c)**2/Z0 # Goppl
         # return Z0*(1+self.Qs(Z0, self.cki)**2) # Ted's notes
     
-    def extraCFromCouplingC(self, name, Z0=50.):
+    def extraCFromCouplingC(self, name):
         '''Effective input capacitance to ground'''
-        c = self.couplings_C[name]
+        c = self.couplings_C[name]['C']
+        Z0 = np.float64(self.couplings_C[name]['Z0']) #float64 allows division by 0 to get inf
         return c/(1. + (self.wn()*c*Z0)**2)
     
-    def addCapacitiveCoupling(self, name, c):
-        self.couplings_C[name] = c
+    def addCapacitiveCoupling(self, name, c, Z0=50.):
+        self.couplings_C[name] = {'C':c,'Z0':Z0}
 
     def wl(self):
         '''Loaded frequency in rad/s'''
