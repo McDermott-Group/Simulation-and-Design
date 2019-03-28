@@ -2,20 +2,20 @@ format long;
 
 % Load the model if not already done so
 if ~exist('model', 'var')
-    model=mphload('/Users/chriswilen/Documents/grad-school/research/mcdermott/Tunable Dissipation/comsol/cfm.mph');
+    model=mphload('/Users/chriswilen/Documents/grad-school/research/mcdermott/comsol/cfm.mph');
 end
 
-x_list = -246:8:0;
-y_list = -99:8:-11;
+x_list = -248:4:0;
+y_list = -101:4:-11;
 
 % import custom progressbar package and initialize other variables
 progressbar('Overall Progress','Runs Failed');
 runs_complete = 0;
 failures = 0;
 
-q1 = zeros(length(x_list),length(y_list));
-q2 = zeros(length(x_list),length(y_list));
-q3 = zeros(length(x_list),length(y_list));
+qq1 = zeros(length(x_list),length(y_list));
+qq2 = zeros(length(x_list),length(y_list));
+qq3 = zeros(length(x_list),length(y_list));
 
 tic;
 
@@ -37,9 +37,9 @@ for i = 1:length(x_list)
         try
             model.study('std1').run();
             model.result().numerical("gev1").run();
-            q1(i,j) = mphglobal(model,'es.Q0_1','dataset','dset1');
-            q2(i,j) = mphglobal(model,'es.Q0_2','dataset','dset1');
-            q3(i,j) = mphglobal(model,'es.Q0_3','dataset','dset1');
+            qq1(i,j) = mphglobal(model,'es.Q0_1','dataset','dset1');
+            qq2(i,j) = mphglobal(model,'es.Q0_2','dataset','dset1');
+            qq3(i,j) = mphglobal(model,'es.Q0_3','dataset','dset1');
         catch
 
             % in the case of an error, the mutual for that run will be 0
