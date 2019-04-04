@@ -1,3 +1,10 @@
+"""
+Chris Wilen
+McDermott Group, UW Madison
+
+This file provides an object to represent the many aspects of a qubit.
+"""
+
 from scipy.constants import mu_0, epsilon_0, pi, hbar, e, c
 from scipy.constants import physical_constants
 from scipy.optimize import fsolve, root
