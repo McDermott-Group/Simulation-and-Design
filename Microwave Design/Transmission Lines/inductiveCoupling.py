@@ -21,18 +21,18 @@ s2 = 3.
 d = 10.
 
 # Ground planes are mult times longer than center trace
-mult = 10
+mult = 10.
 g = mult * w1
 
 # Function to calculate inductive coupling per unit meter
 def CalcMutual(w1Width, w2Width, s1Width, s2Width, dWidth, gWidth):
     # Convert coupled CPW dimensions into nanometers
-    w1Width = w1Width * 1000
-    w2Width = w2Width * 1000
-    s1Width = s1Width * 1000
-    s2Width = s2Width * 1000
-    dWidth = dWidth * 1000
-    gWidth = gWidth * 1000
+    w1Width = w1Width * 1000.
+    w2Width = w2Width * 1000.
+    s1Width = s1Width * 1000.
+    s2Width = s2Width * 1000.
+    dWidth = dWidth * 1000.
+    gWidth = gWidth * 1000.
 
     # Number of points in trace 1
     points = 100
@@ -47,46 +47,46 @@ def CalcMutual(w1Width, w2Width, s1Width, s2Width, dWidth, gWidth):
     w1Points = points
 
     # number of points in W2
-    w2Points = np.round(w2Width / w1Width) * points
+    w2Points = np.round(w2Width / w1Width * points)
 
     # number of points in ground plane
     groundNumPoints = mult * points
 
     # number of points in D
-    dNumPoints = np.round(dWidth / w1Width) * points
+    dNumPoints = np.round(dWidth / w1Width * points)
 
     # Left side ground plane vector
     ground1 = sp.linspace(
-        -(dWidth / 2 + s1Width + w1Width + s1Width + gWidth),
-        -(dWidth / 2 + s1Width + w1Width + s1Width),
+        -(dWidth / 2. + s1Width + w1Width + s1Width + gWidth),
+        -(dWidth / 2. + s1Width + w1Width + s1Width),
         groundNumPoints
     )
 
     # W1 vector
     trace1 = sp.linspace(
-        -(dWidth / 2 + s1Width + w1Width),
-        -(dWidth / 2 + s1Width),
+        -(dWidth / 2. + s1Width + w1Width),
+        -(dWidth / 2. + s1Width),
         w1Points
     )
 
     # D Vector
     separation = sp.linspace(
-        -dWidth / 2,
-        dWidth / 2,
+        -dWidth / 2.,
+        dWidth / 2.,
         dNumPoints
     )
 
     # W2 Vector
     trace2 = sp.linspace(
-        dWidth / 2 + s2Width,
-        dWidth / 2 + s2Width + w2Width,
+        dWidth / 2. + s2Width,
+        dWidth / 2. + s2Width + w2Width,
         w2Points
     )
 
     # right side ground plane vector
     ground2 = sp.linspace(
-        dWidth / 2 + s2Width + w2Width + s2Width,
-        dWidth / 2 + s2Width + w2Width + s2Width + gWidth,
+        dWidth / 2. + s2Width + w2Width + s2Width,
+        dWidth / 2. + s2Width + w2Width + s2Width + gWidth,
         groundNumPoints
     )
 
@@ -97,7 +97,7 @@ def CalcMutual(w1Width, w2Width, s1Width, s2Width, dWidth, gWidth):
     yVec = [0]
 
     # dummy value for KRON
-    yDum = 1
+    yDum = 1.
 
     # matrix consisting of CPW sites
     rMat = sp.kron(xVec, yDum)
@@ -133,19 +133,19 @@ def CalcMutual(w1Width, w2Width, s1Width, s2Width, dWidth, gWidth):
     dxW2 = w2Width / w2Points
 
     # self inductance of ground plane 1
-    selfGround1 = dxG / 2 * sp.ones(len(ground1))
+    selfGround1 = dxG / 2. * sp.ones(len(ground1))
 
     # self inductance of trace 1
-    selfW1 = dxW1 / 2 * sp.ones(len(trace1))
+    selfW1 = dxW1 / 2. * sp.ones(len(trace1))
 
     # self inductance of D
-    selfD = dxD / 2 * sp.ones(len(separation))
+    selfD = dxD / 2. * sp.ones(len(separation))
 
     # self inductance of trace 2
-    selfW2 = dxW2 / 2 * sp.ones(len(trace2))
+    selfW2 = dxW2 / 2. * sp.ones(len(trace2))
 
     # self inductance of ground plane 2
-    selfGround2 = dxG / 2 * sp.ones(len(ground2))
+    selfGround2 = dxG / 2. * sp.ones(len(ground2))
 
     # combine self inductances into single array
     self = sp.concatenate((selfGround1, selfW1, selfD, selfW2, selfGround2))
@@ -162,10 +162,10 @@ def CalcMutual(w1Width, w2Width, s1Width, s2Width, dWidth, gWidth):
     m_exp = returnLoop / r_ij
 
     # geometric contribution
-    mGeo = mu0 / 2 / sp.pi * sp.log(m_exp)
+    mGeo = mu0 / 2. / sp.pi * sp.log(m_exp)
 
     # kinetic inductance contribution
-    lKinVec = mu0 * penDepth ** 2 / dxW1 ** 2 * np.ones(len(rVec))
+    lKinVec = mu0 * penDepth ** 2. / dxW1 ** 2. * np.ones(len(rVec))
 
     # put kinetic inductance values on diagonal of matrix size mGeo
     lKin = np.diag(lKinVec)
