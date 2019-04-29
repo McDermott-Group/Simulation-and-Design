@@ -69,15 +69,20 @@ class Qubit(object):
     def Q_r(self):
         return -self.omega_r/(2*self.Chi())
     
-    def E01(self, E_c, E_j, ng=[0.0]):
-        d1, d2, d3 = self.EkdivEc(ng, E_c, E_j)
+    def E01(self, E_c, E_j, ng=0.0):
+        d1, d2, d3 = self.EkdivEc([ng], E_c, E_j)
         return d2[0]-d1[0]
     
-    def alpha(self, E_c, E_j, ng=[0.0]):
-        d1, d2, d3 = self.EkdivEc(ng, E_c, E_j)
+    def alpha(self, E_c, E_j, ng=0.0):
+        d1, d2, d3 = self.EkdivEc([ng], E_c, E_j)
         E12 = d3[0]-d2[0]
         E01 = d2[0]-d1[0]
         return (E12 - E01)/hbar
+    
+    def charge_dispersion(self):
+        f01_0 = self.E01(self.E_c(), self.E_j(), 0.0)
+        f01_5 = self.E01(self.E_c(), self.E_j(), 0.5)
+        return f01_0 - f01_5
     
     def E_j(self):
         f = lambda ej: self.E01(self.E_c(), ej) - self.omega_q*hbar
