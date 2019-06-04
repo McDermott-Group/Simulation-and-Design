@@ -158,22 +158,22 @@ class CPW(object):
 
 class CPWWithBridges(CPW):
     def __init__(self, bridgeSpacing = 100, bridgeWidth = 2, oxideLossTan = 3e-3, t_oxide = 0.1, e_oxide = 3.9, **kwargs):
-        self.bridgeSpacing = bridgeSpacing
-        self.bridgeWidth = bridgeWidth
+        self.bridgeSpacing = bridgeSpacing*1e-6
+        self.bridgeWidth = bridgeWidth*1e-6
         self.oxideLossTan = oxideLossTan
-        self.t_oxide = t_oxide
+        self.t_oxide = t_oxide*1e-6
         self.e_oxide = e_oxide
         super(CPWWithBridges,self).__init__(**kwargs)
     
     def Cl_bridge_air(self):
-        """Capacitance per unit length of bridge through the air."""
-        bridgeCap = cap.OverlapCapacitor(self.bridgeWidth*1e6*self.w, t = self.t_oxide, eps_r = self.e0)
-        return 1e6*bridgeCap.cap()/self.bridgeSpacing
+        """Capacitance per unit length [F/m] of bridge through the air."""
+        bridgeCap = cap.OverlapCapacitor(1e6*self.bridgeWidth*1e6*self.w, t = 1e6*self.t_oxide, eps_r = self.e0)
+        return bridgeCap.cap()/self.bridgeSpacing
     
     def Cl_bridge_dielectric(self):
-        """Capacitance per unit length of bridge through the air."""
-        bridgeCap = cap.OverlapCapacitor(self.bridgeWidth*1e6*self.w, t = self.t_oxide, eps_r = self.e_oxide)
-        return 1e6*bridgeCap.cap()/self.bridgeSpacing
+        """Capacitance per unit length [F/m] of bridge through the dielectric."""
+        bridgeCap = cap.OverlapCapacitor(1e6*self.bridgeWidth*1e6*self.w, t = 1e6*self.t_oxide, eps_r = self.e_oxide)
+        return bridgeCap.cap()/self.bridgeSpacing
     
     def EeffForPlainCPW(self):
         return super(CPWWithBridges,self).Eeff()
@@ -191,8 +191,9 @@ class CPWWithBridges(CPW):
         cpwCap = super(CPWWithBridges,self).Cl() * self.EeffForPlainCPW()/self.Eeff()
         return cpwCap + self.Cl_bridge_dielectric()
     
-    def Llg(self):
-        return self.Eeff()/c**2/self.Cl()
+    # def Llg(self):
+    #     # I think this is wrong
+    #     return self.Eeff()/c**2/self.Cl()
     
     def Gl_bridge(self, w):
         return w * self.oxideLossTan * self.Cl_bridge_dielectric()
@@ -231,9 +232,13 @@ class Resonator(object):
 
     def L(self):
         # return 2*self.cpw.Ll()*self.l/(pi**2) # Goppl
-        return 1./self.C()/self.w0()**2 # Pozar p.283
+        return 1./self.C0()/self.w0()**2 # Pozar p.283
 
     def C(self):
+        extraCs = [self.extraCFromCouplingC(name) for name in self.couplings_C.keys()]
+        return self.C0() + sum(extraCs)
+
+    def C0(self):
         # these are equiv. (I checked)
         # return self.cpw.Cl()*self.l/2 # Goppl
         return np.pi/self.wavelengthFraction/self.w0()/self.cpw.z0() # Pozar p.283
@@ -247,35 +252,27 @@ class Resonator(object):
         # return np.pi/2/cpw.alpha(self.w0())/self.l
         # return cpw.beta(self.w0())/2/cpw.alpha(self.w0())
 
-    def wn(self):
-        return 1./np.sqrt(self.L()*self.C()) # Goppl
-        # return self.Qint()/(self.R()*self.C())
-    
-    def fn(self):
-        return self.wn()/2/pi
-
     #   Loading
     
     def extraRFromCouplingC(self, name):
         '''Effective input resistance to ground'''
         c = self.couplings_C[name]['C']
         Z0 = np.float64(self.couplings_C[name]['Z0']) #float64 allows division by 0 to get inf
-        return (1. + (self.wn()*c*Z0)**2)/(self.wn()*c)**2/Z0 # Goppl
+        return (1. + (self.w0()*c*Z0)**2)/(self.w0()*c)**2/Z0 # Goppl
         # return Z0*(1+self.Qs(Z0, self.cki)**2) # Ted's notes
     
     def extraCFromCouplingC(self, name):
         '''Effective input capacitance to ground'''
         c = self.couplings_C[name]['C']
         Z0 = np.float64(self.couplings_C[name]['Z0']) #float64 allows division by 0 to get inf
-        return c/(1. + (self.wn()*c*Z0)**2)
+        return c/(1. + (self.w0()*c*Z0)**2)
     
     def addCapacitiveCoupling(self, name, c, Z0=50.):
         self.couplings_C[name] = {'C':c,'Z0':Z0}
 
     def wl(self):
         '''Loaded frequency in rad/s'''
-        extraCs = [self.extraCFromCouplingC(name) for name in self.couplings_C.keys()]
-        return 1./np.sqrt(self.L()*(self.C() + sum(extraCs)))
+        return 1./np.sqrt(self.L()*self.C())
 
     def fl(self):
         '''Loaded frequency'''
@@ -300,8 +297,8 @@ class Resonator(object):
             # else:
             #     extraL = 0
             extraL = np.inf
-            # return self.wn() * (self.C() + self.Cout())/(1./self.R() + 1./self.Rout())
-            return 1./(1./self.R() + 1./extraR) * np.sqrt( (self.C() + extraC) * (1./self.L() + 1./extraL) )
+            # return self.w0() * (self.C() + self.Cout())/(1./self.R() + 1./self.Rout())
+            return 1./(1./self.R() + 1./extraR) * np.sqrt( (self.C0() + extraC) * (1./self.L() + 1./extraL) )
 
     def Ql(self):
         '''Loaded Q, including internal loss.'''
@@ -316,7 +313,7 @@ class Resonator(object):
             if name in self.couplings_L:
                 l.append( self.extraLFromCouplingL( name ) )
                 r.append( self.extraRFromCouplingL( name ) )
-        return 1./(1./self.R() + sum([1./x for x in r])) * np.sqrt(self.C() + sum(c)) * np.sqrt(1./self.L() + sum([1./x for x in l]))
+        return 1./(1./self.R() + sum([1./x for x in r])) * np.sqrt(self.C0() + sum(c)) * np.sqrt(1./self.L() + sum([1./x for x in l]))
         # return 1./(1./self.Qint() + 1./self.Qin() + 1./self.Qout()) # does the just account for C() twice?  Goppl says only works at w=w*
 
     def kappa(self):
