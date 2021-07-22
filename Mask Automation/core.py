@@ -36,8 +36,8 @@ contain references to other Cells, or contain drawing geometry.
     gdsCAD (based on gdspy) is released under the terms of the GNU GPL
     
 """
-from __future__ import print_function
-from __future__ import absolute_import
+
+
 
 
 import sys
@@ -1256,7 +1256,7 @@ class Layout(dict):
         """
 
         dependencies = set(self.values())
-        for cell in self.values():
+        for cell in list(self.values()):
             dependencies |= set(cell.get_dependencies())
                     
         return list(dependencies)
@@ -1337,7 +1337,7 @@ class Layout(dict):
         :returns: List of top level cells.
         """
         top = list(self.values())
-        for cell in self.values():
+        for cell in list(self.values()):
             for dependency in cell.get_dependencies():
                 if dependency in top:
                     top.remove(dependency)
@@ -1587,7 +1587,7 @@ class Cell(object):
             cell_area = {}
             for element in self.elements:
                 element_area = element.area(True)
-                for ll in element_area.iterkeys():
+                for ll in element_area.keys():
                     if ll in cell_area:
                         cell_area[ll] += element_area[ll]
                     else:
@@ -1872,7 +1872,7 @@ class CellReference(ReferenceBase):
             if by_layer:
                 factor = self.magnification * self.magnification
                 cell_area = self.ref_cell.area(True)
-                for kk in cell_area.iterkeys():
+                for kk in cell_area.keys():
                     cell_area[kk] *= factor
                 return cell_area
             else:
@@ -2077,7 +2077,7 @@ class CellArray(ReferenceBase):
             factor = self.cols * self.rows * self.magnification * self.magnification
         if by_layer:
             cell_area = self.ref_cell.area(True)
-            for kk in cell_area.iterkeys():
+            for kk in cell_area.keys():
                 cell_area[kk] *= factor
             return cell_area
         else:
@@ -2345,7 +2345,7 @@ def GdsImport(infile, rename={}, layers={}, datatypes={}, verbose=True, unit=1e-
             kwargs['cols'] = data[0]
             kwargs['rows'] = data[1]
         elif 'STRANS' == rname:
-            kwargs['x_reflection'] = ((long(data[0]) & 0x8000) > 0)
+            kwargs['x_reflection'] = ((int(data[0]) & 0x8000) > 0)
             if verbose==2:
                 print(kwargs['x_reflection'], end=' ')
         elif 'MAG' == rname:
@@ -2385,19 +2385,19 @@ def GdsImport(infile, rename={}, layers={}, datatypes={}, verbose=True, unit=1e-
     # Make connections from cell references to all cells objects
     # We cannot add the cells to the library yet, since we cannot assert that all its
     # dependencies were resolved.
-    for c in cell_dict.values():
+    for c in list(cell_dict.values()):
         for r in c.references:
             r.ref_cell = cell_dict[r.ref_cell]
 
     # Add all the cells to the library.
     warnings.filterwarnings('ignore')  # suppress duplicate cell warning
-    for c in cell_dict.values():
+    for c in list(cell_dict.values()):
         if c not in layout:
             layout.add(c)
     warnings.filterwarnings('default')
 
     # Remove non-top level cells             
-    for k in [j for j in layout.keys() if j not in [i.name for i in layout.top_level()]]:
+    for k in [j for j in list(layout.keys()) if j not in [i.name for i in layout.top_level()]]:
         layout.pop(k)
     
     return layout
@@ -2606,10 +2606,10 @@ def _eight_byte_real(value):
             byte1 = 0x80
             value = -value
         exponent = int(np.floor(np.log2(value) * 0.25))
-        mantissa = long(value * 16**(14 - exponent))
+        mantissa = int(value * 16**(14 - exponent))
         while mantissa >= 72057594037927936:
             exponent += 1
-            mantissa = long(value * 16**(14 - exponent))
+            mantissa = int(value * 16**(14 - exponent))
         byte1 += exponent + 64
         byte2 = (mantissa // 281474976710656)
         short3 = (mantissa % 281474976710656) // 4294967296

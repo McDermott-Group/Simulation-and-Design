@@ -65,7 +65,7 @@ if main:
     name = 'XMON_'+now.strftime('%H_%M_%S')+'.gds'
     layout = core.GdsImport('temp.gds')
     cell.add(layout['TOP3'], origin=(0,0))
-    print('File created : ' + name)
+    print(('File created : ' + name))
 else:
     name = 'SQUID_'+now.strftime('%H_%M_%S')+'.gds'
     layout = core.Layout('LIBRARY')
@@ -73,4 +73,4 @@ else:
 layout.add(cell)
 layout.save(name)
 
-print('\n\nFile created : ' + name)
+print(('\n\nFile created : ' + name))
