@@ -10,12 +10,12 @@ def blockPrint():
 def enablePrint():
     sys.stdout = sys.__stdout__
 
-cap = raw_input("Enter parameters for the capacitor : (Enter blank for default values)\n")
-XY = raw_input("Enter parameters for the XY Control : (Enter blank for default values)\n")
-typ = raw_input("Enter type of SQUID : (kelly/default)\n")
-Z = raw_input("Enter parameters for the SQUID and Z control : (Enter blank for default values)\n")
-Qbus = raw_input("Enter parameters for the Quantum Bus : (Enter blank for default values)\n")
-resonator = raw_input("Enter parameters for the Resonator : (Enter blank for default values)\n")
+cap = input("Enter parameters for the capacitor : (Enter blank for default values)\n")
+XY = input("Enter parameters for the XY Control : (Enter blank for default values)\n")
+typ = input("Enter type of SQUID : (kelly/default)\n")
+Z = input("Enter parameters for the SQUID and Z control : (Enter blank for default values)\n")
+Qbus = input("Enter parameters for the Quantum Bus : (Enter blank for default values)\n")
+resonator = input("Enter parameters for the Resonator : (Enter blank for default values)\n")
 
 parser = argparse.ArgumentParser(add_help=False,description='Generates the gds for the Capacitor.\nRefer to the pdf file for all the parametrizations')
 parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,

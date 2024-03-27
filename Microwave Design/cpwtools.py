@@ -235,7 +235,7 @@ class Resonator(object):
         return 1./self.C0()/self.w0()**2 # Pozar p.283
 
     def C(self):
-        extraCs = [self.extraCFromCouplingC(name) for name in self.couplings_C.keys()]
+        extraCs = [self.extraCFromCouplingC(name) for name in list(self.couplings_C.keys())]
         return self.C0() + sum(extraCs)
 
     def C0(self):
@@ -281,7 +281,7 @@ class Resonator(object):
     def Qc(self, name=None):
         if name is None:
             '''Total coupling Q'''
-            names = self.couplings_C.keys() + list(set(self.couplings_L) - set(self.couplings_C))
+            names = list(self.couplings_C.keys()) + list(set(self.couplings_L) - set(self.couplings_C))
             q = [1./self.Qc(name) for name in names]
             return 1./(1./self.Qint() + sum(q))
         else:
@@ -302,7 +302,7 @@ class Resonator(object):
 
     def Ql(self):
         '''Loaded Q, including internal loss.'''
-        names = self.couplings_C.keys() + list(set(self.couplings_L) - set(self.couplings_C))
+        names = list(self.couplings_C.keys()) + list(set(self.couplings_L) - set(self.couplings_C))
         r = []
         c = []
         l = []
@@ -338,7 +338,7 @@ class HalfLResonator(Resonator):
     def __init__(self, *args, **kwargs):
         super(HalfLResonator,self).__init__(*args)
         self.wavelengthFraction = 2
-        for name in kwargs.keys():
+        for name in list(kwargs.keys()):
             self.addCapacitiveCoupling(name,kwarg[name])
 
 

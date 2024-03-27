@@ -61,4 +61,4 @@ layout1 = core.Layout('XMON')
 layout1.add(cell)
 layout1.save(name)
 
-print('\n\nFile created : ' + name)
+print(('\n\nFile created : ' + name))

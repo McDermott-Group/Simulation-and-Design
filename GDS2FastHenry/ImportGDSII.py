@@ -28,7 +28,7 @@ class GDSII:
             thick: Thickness of all elements in GDSII file. Defaults to 100nm.
         '''
         try:
-            print filename
+            print(filename)
             stream = open(filename,'rb')
             self.gds_lib = Library.load(stream)
         except:
@@ -113,7 +113,7 @@ class GDSII:
                         nodeList.append(fhf.point(vertex[0]/SCALE, vertex[1]/SCALE, elem.layer*self.thick))
                         nodeCounter = nodeCounter+1
                         
-                    for idx in xrange(len(elem.xy)-1):
+                    for idx in range(len(elem.xy)-1):
                         
                         segList.append(fhf.segment(startNode+idx,startNode+idx+1,elem.width/SCALE,self.thick))
                     
@@ -147,11 +147,11 @@ class GDSII:
         if path[1] != '.gds':
             raise Exception('File '+filename+' is not a GDSII file!!')
         
-        print 'Importing GDSII file '+filename
+        print('Importing GDSII file '+filename)
         
         self.Load(filename,thick)
         
-        print 'Parsing GDSII File...'
+        print('Parsing GDSII File...')
         
         self.ConvertToInternal(skipLayers)
         
@@ -160,7 +160,7 @@ class GDSII:
         
         fastHenry = fhf.FastHenryFile(fh_fn, comments)
         
-        print 'Exporting FastHenry file...'
+        print('Exporting FastHenry file...')
         
         fastHenry.WriteDefaults()
         fastHenry.WriteGroundPlanes(self.GroundPlaneList)
@@ -175,8 +175,8 @@ class GDSII:
         
         fastHenry.WriteTerminator()
         
-        print 'Wrote file: '+fh_fn
-        print 'All done! Thanks :)'
+        print('Wrote file: '+fh_fn)
+        print('All done! Thanks :)')
                 
                 
         

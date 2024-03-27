@@ -230,7 +230,7 @@ def CalcMutual(w1Width, w2Width, s1Width, s2Width, dWidth, gWidth):
     phiW2I = iCurrent[j]
     i1Sum = sp.sum(current[int(groundNumPoints):int(groundNumPoints + points)])
     indLength = (phiW2I + 1.0) / i1Sum
-    print('The inductance per unit length is %.2e H/m' % indLength)
+    print(('The inductance per unit length is %.2e H/m' % indLength))
     return indLength
 
 
